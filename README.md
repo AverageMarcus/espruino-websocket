@@ -1,5 +1,5 @@
 # espruino-websocket
-Crude websocket implementation for use on an Espruino
+Crude websocket implementation for use on an [Espruino](http://www.espruino.com/)
 
 # About
 
