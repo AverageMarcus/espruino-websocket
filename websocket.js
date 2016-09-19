@@ -51,25 +51,25 @@ WebSocket.prototype.onConnect = function (socket) {
 
 WebSocket.prototype.parseData = function (data) {
   var ws = this;
+  var handshakeDone = false;
   this.emit('rawData', data);
 
   if (this.lastData.length) {
     data = this.lastData+data;
-    this.lastData="";
+    this.lastData = "";
   }
 
   // FIXME - not a good idea!
-  if (data.indexOf(this.key.hashed) > -1) {
-      this.pingTimer = setInterval(function () {
-          ws.send('ping', 0x89);
-      }, this.keepAlive);
-    
+  if (data.indexOf(this.key.hashed) > -1 && data.indexOf('\r\n\r\n') > -1) {
+    this.pingTimer = setInterval(function () {
+      ws.send('ping', 0x89);
+    }, this.keepAlive);
     data = data.substring(data.indexOf('\r\n\r\n') + 4);
+    handshakeDone = true;
   }
 
   var opcode = data.charCodeAt(0)&15;
 
-  
   if (opcode == 0x9) {
     this.send('pong', 0x8A);
     return this.emit('ping');
@@ -81,6 +81,12 @@ WebSocket.prototype.parseData = function (data) {
 
 
   if (opcode == 0x1 || opcode == 0x0) {
+    if(handshakeDone) {
+      this.lastData = '';
+      this.connected = true;
+      return this.emit('open', data);
+    }
+
     var dataLen = data.charCodeAt(1)&127;
     var offset = 2;
     if (dataLen==126) {
@@ -102,17 +108,17 @@ WebSocket.prototype.parseData = function (data) {
     }
 
     var msg = "";
-    for (var i = 0; i < dataLen; i++)
+    for (var i = 0; i < dataLen; i++) {
       msg += String.fromCharCode(data.charCodeAt(offset++) ^ mask[i&3]);
+    }
     this.lastData = data.substr(offset);
   
-    if(!this.connected) {
-      this.connected = true;
-      this.emit('open', msg);
-    } else {
-      this.emit('message', msg);
+    if(this.connected) {
+      this.lastData = '';
+      return this.emit('message', msg);
     }
   }
+  this.lastData = data;
 };
 
 WebSocket.prototype.handshake = function () {
