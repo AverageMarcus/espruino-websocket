@@ -23,6 +23,7 @@ function WebSocket(host, options) {
   this.lastData = "";
   this.key = buildKey();
   this.connected = false;
+  this.handshakeDone = false;
   this.initializeConnection();
 }
 
@@ -51,7 +52,6 @@ WebSocket.prototype.onConnect = function (socket) {
 
 WebSocket.prototype.parseData = function (data) {
   var ws = this;
-  var handshakeDone = false;
   this.emit('rawData', data);
 
   if (this.lastData.length) {
@@ -65,7 +65,7 @@ WebSocket.prototype.parseData = function (data) {
       ws.send('ping', 0x89);
     }, this.keepAlive);
     data = data.substring(data.indexOf('\r\n\r\n') + 4);
-    handshakeDone = true;
+    this.handshakeDone = true;
   }
 
   var opcode = data.charCodeAt(0)&15;
@@ -79,14 +79,7 @@ WebSocket.prototype.parseData = function (data) {
     return this.emit('pong');
   }
 
-
   if (opcode == 0x1 || opcode == 0x0) {
-    if(handshakeDone) {
-      this.lastData = '';
-      this.connected = true;
-      return this.emit('open', data);
-    }
-
     var dataLen = data.charCodeAt(1)&127;
     var offset = 2;
     if (dataLen==126) {
@@ -100,7 +93,7 @@ WebSocket.prototype.parseData = function (data) {
                data.charCodeAt(offset++), data.charCodeAt(offset++)];
     }
 
-    if (dataLen+offset > data.length) {
+    if (dataLen+offset > data.length && opcode != 0x0 && data.length != 0) {
       // we received the start of a packet, but not enough of it for a full message.
       // store it for later, so when we get the next packet we can do the whole message
       this.lastData = data;
@@ -116,6 +109,10 @@ WebSocket.prototype.parseData = function (data) {
     if(this.connected) {
       this.lastData = '';
       return this.emit('message', msg);
+    } else if(this.handshakeDone) {
+      this.lastData = '';
+      this.connected = true;
+      return this.emit('open', data.length ? data.substring(data.indexOf('{')) : data);
     }
   }
   this.lastData = data;
