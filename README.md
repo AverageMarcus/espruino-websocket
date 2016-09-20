@@ -15,7 +15,7 @@ A modified version of the current Espruino websocket module (https://github.com/
 
 ## How to use
 
-```
+```js
 var WebSocket = require("https://github.com/AverageMarcus/espruino-websocket/blob/master/websocket.js");
 var wifi = require("EspruinoWiFi");
 
