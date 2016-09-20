@@ -1,4 +1,4 @@
-var sha1 = require('sha1');
+var crypto = require('crypto');
 var strChr = String.fromCharCode;
 
 function buildKey() {
@@ -6,7 +6,7 @@ function buildKey() {
   var toHash = randomString + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
   return {
     source: randomString,
-    hashed: btoa(sha1(toHash))
+    hashed: btoa(crypto.SHA1(toHash))
   }
 }
 
