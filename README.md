@@ -1,3 +1,9 @@
+# :warning: Now available in the Espruino repo - please use that instead
+
+---
+
+## :skull: _Deprecated_
+
 # espruino-websocket
 Websocket implementation for use on an [Espruino](http://www.espruino.com/)
 
